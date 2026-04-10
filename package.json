@@ -1,8 +1,11 @@
 {
-  "name": "@holepunchto/repo-template",
+  "name": "pear-provision-recover",
   "version": "0.0.1",
-  "description": "repo-template",
+  "description": "Recover a provision drive from the network",
   "main": "index.js",
+  "bin": {
+    "pear-provision-recover": "bin.js"
+  },
   "exports": {
     "./package": "./package.json",
     ".": {
@@ -13,7 +16,8 @@
   "files": [
     "package.json",
     "index.js",
-    "index.d.ts"
+    "index.d.ts",
+    "bin.js"
   ],
   "devDependencies": {
     "brittle": "^3.19.0",
@@ -23,7 +27,9 @@
   },
   "scripts": {
     "format": "prettier . --write",
-    "test": "brittle-bare test/index.js",
+    "test": "npm run test:bare && npm run test:node",
+    "test:bare": "brittle-bare test/index.js",
+    "test:node": "brittle-node test/index.js",
     "lint": "prettier . --check && lunte"
   },
   "repository": {
@@ -35,5 +41,29 @@
   "bugs": {
     "url": "https://github.com/holepunchto/repo-template/issues"
   },
-  "homepage": "https://github.com/holepunchto/repo-template"
+  "homepage": "https://github.com/holepunchto/repo-template",
+  "dependencies": {
+    "corestore": "^7.9.2",
+    "hyperdrive": "^13.3.2",
+    "hyperswarm": "^4.17.0",
+    "paparam": "^1.10.1"
+  },
+  "imports": {
+    "events": {
+      "bare": "bare-events",
+      "default": "events"
+    },
+    "fs": {
+      "bare": "bare-fs",
+      "default": "fs"
+    },
+    "os": {
+      "bare": "bare-os",
+      "default": "os"
+    },
+    "path": {
+      "bare": "bare-path",
+      "default": "path"
+    }
+  }
 }
