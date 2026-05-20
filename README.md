@@ -29,7 +29,7 @@ pear-provision-recover --path <storage> --key <key> --length <n> --blobs-length 
 | `--path <path>`      | Corestore storage path                   |
 | `--key <key>`        | Remote provision drive public key        |
 | `--length <n>`       | Number of metadata blocks to recover     |
-| `--blobs-length <n>`  | Number of blob blocks to recover         |
+| `--blobs-length <n>` | Number of blob blocks to recover         |
 | `--primaryKey <key>` | Local store primary key (optional)       |
 | `--name <name>`      | Local store namespace (default: `local`) |
 
