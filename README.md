@@ -19,7 +19,7 @@ npm install -g pear-provision-recover
 ## CLI
 
 ```
-pear-provision-recover --path <storage> --key <key> --length <n> --blobsLength <n> --primary-key <primary-key> --name <name>
+pear-provision-recover --path <storage> --key <key> --length <n> --blobs-length <n> --primary-key <primary-key> --name <name>
 ```
 
 ### Flags
@@ -29,7 +29,7 @@ pear-provision-recover --path <storage> --key <key> --length <n> --blobsLength <
 | `--path <path>`      | Corestore storage path                   |
 | `--key <key>`        | Remote provision drive public key        |
 | `--length <n>`       | Number of metadata blocks to recover     |
-| `--blobsLength <n>`  | Number of blob blocks to recover         |
+| `--blobs-length <n>`  | Number of blob blocks to recover         |
 | `--primaryKey <key>` | Local store primary key (optional)       |
 | `--name <name>`      | Local store namespace (default: `local`) |
 

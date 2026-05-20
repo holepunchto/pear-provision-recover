@@ -13,8 +13,8 @@ const cmd = command(
   flag('--path <path>', 'Corestore storage path'),
   flag('--key <key>', 'Remote production drive public key'),
   flag('--length <length>', 'Remote length to recover'),
-  flag('--blobsLength <blobsLength>', 'Remote blobs length to recover'),
-  flag('--primaryKey <primaryKey>', 'local store primary key'),
+  flag('--blobs-length <blobsLength>', 'Remote blobs length to recover'),
+  flag('--primary-key <primaryKey>', 'local store primary key'),
   flag('--name <name>', 'local store namespace'),
   async (cmd) => {
     const { path, key, length, blobsLength, primaryKey, name } = cmd.flags
