@@ -46,7 +46,8 @@
     "corestore": "^7.9.2",
     "hyperdrive": "^13.3.2",
     "hyperswarm": "^4.17.0",
-    "paparam": "^1.10.1"
+    "paparam": "^1.10.1",
+    "ready-resource": "^1.2.0"
   },
   "imports": {
     "events": {

@@ -1,25 +1,21 @@
 #!/usr/bin/env node
 
 const { command, flag, summary } = require('paparam')
-const recover = require('.')
+const Recovery = require('.')
 
 const cmd = command(
   'pear-provision-recover',
   summary('Recover a provision drive from the network'),
   flag('--path <path>', 'Corestore storage path'),
   flag('--key <key>', 'Remote production drive public key'),
-  flag('--timeout <ms>', 'Peer discovery timeout in milliseconds'),
+  flag('--length <length>', 'Remote length to recover'),
+  flag('--blobsLength <blobsLength>', 'Remote blobs length to recover'),
+  flag('--primaryKey <primaryKey>', 'local store primary key'),
   async (cmd) => {
     const { path, key, timeout } = cmd.flags
 
-    const r = recover({ path, key, timeout: timeout ? Number(timeout) : undefined })
-
-    r.on('ready', ({ key, discoveryKey }) => {
-      console.log('New drive key:', key)
-      console.log('Discovery key:', discoveryKey)
-    })
-
-    r.on('peer-connect', () => console.log('Peer connected, starting recovery...'))
+    const recover = new Recovery({ path, key, length, blobsLength, primaryKey })
+    await recover.ready()
 
     r.on('metadata-sync', ({ block, total }) => {
       console.log(`Metadata: ${block}/${total} blocks`)
@@ -30,17 +26,16 @@ const cmd = command(
     })
 
     try {
-      const result = await r.done()
+      await recover.run()
       console.log('\nRecovery complete.')
-      console.log('  Key:', result.key)
-      console.log('  Path:', result.path)
-      console.log('  metadataBlocks:', result.metadataBlocks)
-      console.log('  blobsBlocks:', result.blobsBlocks)
+      console.log('  Key:', recover.key)
+      console.log('  Path:', recover.path)
+      console.log('  metadataBlocks:', recover.local.core.length)
+      console.log('  blobsBlocks:', recover.local.blobs.core.length)
     } catch (err) {
       console.log('Recovery failed:', err.message)
-      process.exitCode = 1
     } finally {
-      await r.destroy()
+      await recover.close()
     }
   }
 )

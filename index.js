@@ -1,9 +1,9 @@
-const EventEmitter = require('events')
+const ReadyResource = require('ready-resource')
 const Corestore = require('corestore')
 const Hyperdrive = require('hyperdrive')
 const Hyperswarm = require('hyperswarm')
 
-class Recovery extends EventEmitter {
+module.exports = class Recovery extends ReadyResource {
   constructor(opts = {}) {
     super()
 
@@ -12,103 +12,67 @@ class Recovery extends EventEmitter {
 
     this.path = opts.path
     this.key = typeof opts.key === 'string' ? Buffer.from(opts.key, 'hex') : opts.key
-    this.timeout = opts.timeout || 30000
     this.bootstrap = opts.bootstrap || null
 
-    this._done = null
-    this._store = null
     this._swarm = null
+    this._store = null
+    this.local = null
+    this.remote = null
 
-    this._run()
+    this._length = opts.length
+    this._blobsLength = opts.blobsLength
+    this._primaryKey = opts.primaryKey
   }
 
-  done() {
-    if (!this._done) this._done = this._promise()
-    return this._done
+  async _open() {
+    const storeOpts = this._primaryKey ? { primaryKey: this._primaryKey, unsafe: true } : {}
+    this._store = new Corestore(this.path, storeOpts)
+
+    this.remote = new Hyperdrive(this._store.namespace('remote'), this.key)
+    await this.remote.ready()
+
+    this.local = new Hyperdrive(this._store.namespace('local'))
+    await this.local.ready()
+
+    this._swarm = new Hyperswarm(this.bootstrap ? { bootstrap: this.bootstrap } : {})
+    this._swarm.on('connection', (conn) => this._store.replicate(conn))
+    this._swarm.join(this.remote.discoveryKey, { client: true, server: false })
+
+    await this.remote.getBlobs()
+    await this.local.getBlobs()
+
+    while (this.remote.core.length < this._length) {
+      await new Promise((resolve) => setTimeout(resolve, 20))
+    }
+
+    while (this.remote.blobs.core.length < this._blobsLength) {
+      await new Promise((resolve) => setTimeout(resolve, 20))
+    }
   }
 
-  async destroy() {
+  async _close() {
     if (this._swarm) await this._swarm.destroy()
     if (this._store) await this._store.close()
   }
 
-  async _promise() {
-    return new Promise((resolve, reject) => {
-      this.on('done', resolve)
-      this.on('error', reject)
-    })
-  }
+  async run() {
+    this.remote.db.core.download() // prefetch metadata
+    this.remote.blobs.core.download() // prefetch blobs
 
-  async _run() {
-    try {
-      this._store = new Corestore(this.path)
+    let metadataBlocks = 0
+    while (metadataBlocks < this._length) {
+      const block = await this.remote.core.get(metadataBlocks)
+      await this.local.core.append(block)
+      metadataBlocks++
+      this.emit('metadata-sync', { block: metadataBlocks, total: this._length })
+    }
 
-      const remote = new Hyperdrive(this._store.namespace('remote'), this.key)
-      await remote.ready()
-
-      const local = new Hyperdrive(this._store.namespace('local'))
-      await local.ready()
-
-      this._swarm = new Hyperswarm(this.bootstrap ? { bootstrap: this.bootstrap } : {})
-      this._swarm.on('connection', (conn) => this._store.replicate(conn))
-
-      this.emit('ready', {
-        key: local.key.toString('hex'),
-        discoveryKey: local.discoveryKey.toString('hex')
-      })
-
-      this._swarm.join(remote.discoveryKey, { client: true, server: false })
-
-      const peer = await new Promise((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error('no peers found')), this.timeout)
-        this._swarm.on('connection', (conn) => {
-          clearTimeout(timer)
-          resolve(conn)
-        })
-      })
-
-      this.emit('peer-connect', { peer })
-
-      if (remote.core.length === 0) await remote.core.update()
-      if (remote.core.length === 0) {
-        await new Promise((resolve) => remote.core.once('append', resolve))
-      }
-      if (remote.core.length === 0) throw new Error('remote drive is empty')
-
-      let metadataBlocks = 0
-      while (local.core.length < remote.core.length) {
-        const block = await remote.core.get(local.core.length)
-        await local.core.append(block)
-        metadataBlocks++
-        this.emit('metadata-sync', { block: metadataBlocks, total: remote.core.length })
-      }
-
-      const remoteBlobs = await remote.getBlobs()
-      const localBlobs = await local.getBlobs()
-
-      if (remoteBlobs.core.length === 0) await remoteBlobs.core.update()
-      if (remoteBlobs.core.length > 0) remoteBlobs.core.download()
-
-      let blobsBlocks = 0
-      while (localBlobs.core.length < remoteBlobs.core.length) {
-        const block = await remoteBlobs.core.get(localBlobs.core.length)
-        await localBlobs.core.append(block)
-        blobsBlocks++
-        this.emit('blobs-sync', { block: blobsBlocks, total: remoteBlobs.core.length })
-      }
-
-      this.emit('done', {
-        key: local.key.toString('hex'),
-        path: this.path,
-        metadataBlocks,
-        blobsBlocks
-      })
-    } catch (err) {
-      this.emit('error', err)
+    let blobsBlocks = 0
+    while (blobsBlocks < this._blobsLength) {
+      const block = await this.remote.blobs.core.get(blobsBlocks)
+      await this.local.blobs.core.append(block)
+      blobsBlocks++
+      this.emit('blobs-sync', { block: blobsBlocks, total: this._blobsLength })
     }
   }
-}
-
-module.exports = function recover(opts) {
-  return new Recovery(opts)
 }
