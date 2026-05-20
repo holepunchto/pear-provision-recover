@@ -16,13 +16,20 @@ test('recover replicates drive content', async (t) => {
   const { drive: remote } = await createRemoteDrive(t, bootstrap)
   const dir = tmpdir()
 
-  const recover = new Recovery({
+  const store = new Corestore(dir)
+  const swarm = new Hyperswarm({ bootstrap })
+
+  swarm.on('connection', (conn) => store.replicate(conn))
+  swarm.join(remote.core.discoveryKey, { client: true, server: false })
+
+  const recover = new Recovery(swarm, store, {
     path: dir,
     key: remote.key,
     bootstrap,
     length: remote.core.length,
     blobsLength: remote.blobs.core.length
   })
+
   await recover.ready()
   await recover.run()
 

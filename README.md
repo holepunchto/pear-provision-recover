@@ -11,63 +11,64 @@ An existing network of nodes must be seeding the original drive. Recovery cannot
 ## Install
 
 ```
-npm install pear-provision-recover
+npm install -g pear-provision-recover
 ```
 
 ## Usage
 
-### CLI
+## CLI
 
 ```
-pear-provision-recover --path /path/to/corestore --key <prod-public-key>
+pear-provision-recover --path <storage> --key <key> --length <n> --blobsLength <n> --primary-key <primary-key> --name <name>
 ```
 
-Flags:
+### Flags
 
-- `--path <path>` — Corestore storage path
-- `--key <key>` — Remote production drive public key (hex)
-- `--timeout <ms>` — Peer discovery timeout in milliseconds (default: 30000)
+| Flag                 | Description                              |
+| -------------------- | ---------------------------------------- |
+| `--path <path>`      | Corestore storage path                   |
+| `--key <key>`        | Remote provision drive public key        |
+| `--length <n>`       | Number of metadata blocks to recover     |
+| `--blobsLength <n>`  | Number of blob blocks to recover         |
+| `--primaryKey <key>` | Local store primary key (optional)       |
+| `--name <name>`      | Local store namespace (default: `local`) |
 
-### Programmatic
+## API
 
 ```js
-const recover = require('pear-provision-recover')
-
-const r = recover({
-  path: '/path/to/corestore',
-  key: '<prod-public-key>',
-  timeout: 30000
-})
-
-r.on('ready', ({ key, discoveryKey }) => {
-  /* new drive created */
-})
-r.on('peer-connect', ({ peer }) => {
-  /* first peer found */
-})
-r.on('metadata-sync', ({ block, total }) => {
-  /* metadata block copied */
-})
-r.on('blobs-sync', ({ block, total }) => {
-  /* blob block copied */
-})
-
-const result = await r.done()
-// { key, path, metadataBlocks, blobsBlocks }
-
-await r.destroy()
+const Recovery = require('pear-provision-recover')
 ```
 
-## How it works
+### `const recover = new Recovery(swarm, store, opts)`
 
-1. Opens a Corestore at the given path
-2. Creates a new writable Hyperdrive (new keypair)
-3. Joins the swarm to discover peers seeding the remote drive
-4. Copies metadata core blocks sequentially
-5. Copies blobs core blocks sequentially
-6. Emits the new key and block counts
+Create a recovery instance.
 
-The recovered drive has a new public key and is independently writable. Any downstream references to the old key must be updated.
+- `swarm` — a Hyperswarm instance used for replication
+- `store` — a Corestore instance for local storage
+- `opts.key` — remote drive public key (string or buffer, required)
+- `opts.length` — number of remote metadata blocks to download
+- `opts.blobsLength` — number of remote blob blocks to download
+- `opts.primaryKey` — optional primary key for the local store
+- `opts.name` — local drive namespace (default: `local`)
+
+### `await recover.ready()`
+
+Opens the remote and local Hyperdrives and waits until the remote has at least `length` metadata blocks and `blobsLength` blob blocks available. Throws if the local storage has already been written to.
+
+### `await recover.run()`
+
+Downloads all metadata and blob blocks from the remote drive and appends them to the local drive. Emits progress events during the transfer:
+
+- `metadata-sync` — `{ block, total }` after each metadata block
+- `blobs-sync` — `{ block, total }` after each blob block
+
+### `await recover.seed()`
+
+Waits until remote peers have downloaded the full contents of the local drive (both metadata and blobs).
+
+### `await recover.close()`
+
+Destroys the swarm and closes the store.
 
 ## License
 
