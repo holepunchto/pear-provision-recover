@@ -35,6 +35,8 @@ test('recover replicates drive content', async (t) => {
 
   t.teardown(() => {
     recover.close()
+    store.close()
+    swarm.destroy()
   })
 
   t.not(recover.local.key, remote.key.toString('hex'), 'new key is different')
