@@ -9,14 +9,12 @@
   "exports": {
     "./package": "./package.json",
     ".": {
-      "types": "./index.d.ts",
       "default": "./index.js"
     }
   },
   "files": [
     "package.json",
     "index.js",
-    "index.d.ts",
     "bin.js"
   ],
   "devDependencies": {
@@ -52,10 +50,6 @@
     "ready-resource": "^1.2.0"
   },
   "imports": {
-    "events": {
-      "bare": "bare-events",
-      "default": "events"
-    },
     "fs": {
       "bare": "bare-fs",
       "default": "fs"
