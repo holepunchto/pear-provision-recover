@@ -11,14 +11,12 @@ module.exports = class Recovery extends ReadyResource {
     this.key = typeof opts.key === 'string' ? decode(opts.key) : opts.key
     this.bootstrap = opts.bootstrap || null
 
-    this._swarm = swarm
     this._store = store
     this.local = null
     this.remote = null
 
     this._length = opts.length
     this._blobsLength = opts.blobsLength
-    this._primaryKey = opts.primaryKey
     this._name = opts.name || 'local'
   }
 
@@ -44,8 +42,8 @@ module.exports = class Recovery extends ReadyResource {
   }
 
   async _close() {
-    if (this._swarm) await this._swarm.destroy()
-    if (this._store) await this._store.close()
+    if (this.local) await this.local.close()
+    if (this.remote) await this.remote.close()
   }
 
   async run() {
