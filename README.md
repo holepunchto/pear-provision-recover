@@ -48,7 +48,6 @@ Create a recovery instance.
 - `opts.key` — remote drive public key (string or buffer, required)
 - `opts.length` — number of remote metadata blocks to download
 - `opts.blobsLength` — number of remote blob blocks to download
-- `opts.primaryKey` — optional primary key for the local store
 - `opts.name` — local drive namespace (default: `local`)
 
 ### `await recover.ready()`
