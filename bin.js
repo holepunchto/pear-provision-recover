@@ -19,7 +19,7 @@ const cmd = command(
   async (cmd) => {
     const { path, key, length, blobsLength, primaryKey, name } = cmd.flags
 
-    const storeOpts = this._primaryKey ? { primaryKey: this._primaryKey, unsafe: true } : {}
+    const storeOpts = primaryKey ? { primaryKey, unsafe: true } : {}
     const store = new Corestore(path, storeOpts)
     const swarm = new Hyperswarm()
     swarm.on('connection', (conn) => store.replicate(conn))
