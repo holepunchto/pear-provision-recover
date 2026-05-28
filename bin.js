@@ -27,7 +27,7 @@ const cmd = command(
     const discoveryKey = crypto.discoveryKey(decode(key))
     swarm.join(discoveryKey, { client: true, server: false })
 
-    const recover = new Recovery(swarm, store, { path, key, length, blobsLength, primaryKey, name })
+    const recover = new Recovery(swarm, store, { path, key, length, blobsLength, name })
     await recover.ready()
 
     recover.on('metadata-sync', ({ block, total }) => {
