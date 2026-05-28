@@ -1,6 +1,6 @@
 {
   "name": "pear-provision-recover",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Recover a provision drive from the network",
   "main": "index.js",
   "bin": {
